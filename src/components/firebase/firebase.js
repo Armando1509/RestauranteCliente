@@ -1,12 +1,23 @@
-import {initializeApp} from 'firebase/app'
-import  firebaseConfig  from './config'
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import firebaseConfig from './config';
 
-class Firebase{
-    constructor(){
-        this.app = initializeApp(firebaseConfig)
+class Firebase {
+    constructor() {
+        if (!getApps().length) {
+            // Inicializa la aplicación de Firebase
+            this.app = initializeApp(firebaseConfig);
+        } else {
+            this.app = getApps()[0]; // Usa la app ya inicializada
+        }
+        
+        // Inicializa Firestore
+        this.db = getFirestore(this.app);
+        this.storage = getStorage(this.app)
     }
 }
 
-const firebase = new Firebase()
+const firebase = new Firebase();
 
-export default firebase
+export default firebase;

@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { collection, addDoc } from 'firebase/firestore';
+import { useNavigate } from "react-router-dom";
+
+import { FirebaseContext } from "../../components/firebase/index";
 
 const NuevoPlatillo = () => {
+  //constext para las operaciones de firebase
+  const { firebase } = useContext(FirebaseContext);
+  console.log(firebase);
+  
+  // Hook para redireccionar
+  const navigate = useNavigate()
+
   //validacion y leer los datos del formulario
   const formik = useFormik({
     initialValues: {
@@ -24,9 +35,21 @@ const NuevoPlatillo = () => {
         .min(10, "La descripcion debe ser mas larga")
         .required("La descripcion es obligatoria es obligatorio"),
     }),
-    onSubmit: (datos) => {
-      console.log(datos);
-    },
+   
+    onSubmit: (platillos) => {
+      try {
+        platillos.existencia = true
+        const docRef = addDoc(collection(firebase.db,'productos'), platillos)
+        console.log("Documento añadido con ID: ", docRef.id);
+        //Redireccionar
+        navigate('/menu')
+      } catch (error) {
+        console.error("Error añadiendo el documento: ", error);
+      }
+    }, 
+
+   
+
   });
 
   return (
