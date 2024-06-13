@@ -1,18 +1,26 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-
+import FileUploader from "react-firebase-file-uploader";
+/* import { storage } from "../firebase/firebase"; */
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { FirebaseContext } from "../../components/firebase/index";
 
 const NuevoPlatillo = () => {
+
+  // state para las imagenes
+  const [subiendo, guardarSubiendo] = useState(false);
+  const [progreso, guardarProgreso ] = useState(0);
+  const [ urlimagen, guardarUrlimagen] = useState('');
+
   //constext para las operaciones de firebase
   const { firebase } = useContext(FirebaseContext);
-  console.log(firebase);
-  
+
+
   // Hook para redireccionar
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   //validacion y leer los datos del formulario
   const formik = useFormik({
@@ -35,22 +43,74 @@ const NuevoPlatillo = () => {
         .min(10, "La descripcion debe ser mas larga")
         .required("La descripcion es obligatoria es obligatorio"),
     }),
-   
+
     onSubmit: (platillos) => {
       try {
-        platillos.existencia = true
-        const docRef = addDoc(collection(firebase.db,'productos'), platillos)
-        console.log("Documento añadido con ID: ", docRef.id);
+        platillos.existencia = true;
+        platillos.imagen = urlimagen
+        console.log(platillos.imagen);
+        const docRef = addDoc(collection(firebase.db, "productos"), platillos);
         //Redireccionar
-        navigate('/menu')
+        navigate("/menu");
       } catch (error) {
         console.error("Error añadiendo el documento: ", error);
       }
-    }, 
-
-   
-
+    },
   });
+
+  //Todo sobre imagenes
+  const handleUploadStart = () => {
+    guardarProgreso(0);
+    guardarSubiendo(true);
+}
+const handleUploadError = error => {
+    guardarSubiendo(false);
+    console.log(error);
+}
+const handleUploadSuccess = async nombre => {
+    guardarProgreso(100);
+    guardarSubiendo(false);
+
+    // Almacenar la URL de destino
+    const url = await firebase
+            .storage
+            .ref("productos")
+            .child(nombre)
+            .getDownloadURL();
+
+    console.log(url);
+    guardarUrlimagen(url);
+}
+const handleProgress = progreso => {
+    guardarProgreso(progreso);
+
+    console.log(progreso);
+}
+
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const storageRef = ref(firebase.storage, `productos/${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        guardarProgreso(progress);
+      },
+      (error) => {
+        setUploadError(error);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          guardarUrlimagen(downloadURL);
+        });
+      }
+    );
+  }
+};
 
   return (
     <>
@@ -151,15 +211,26 @@ const NuevoPlatillo = () => {
               >
                 Imagen
               </label>
-              <input
-                className=" shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="imagen"
-                type="file"
-                value={formik.values.imagen}
-                onChange={formik.handleChange}
-                onBlur={formik.onBlur}
-              />
+               
+              <input type="file" accept="image/*" onChange={handleFileChange} />
+      {handleUploadStart > 0 && <progress value={handleProgress} max="100">{handleProgress}%</progress>}
+      {handleUploadError && <div>Error: {handleUploadError.message}</div>}
+      {handleUploadSuccess && <div>Success! File URL: {urlimagen}</div>} 
             </div>
+            { subiendo && (
+                            <div className="h-12 relative w-full border">
+                                <div className="bg-green-500 absolute left-0 top-0 text-white px-2 text-sm h-12 flex items-center" style={{ width: `${progreso}%` }}>
+                                    {progreso} % 
+                                </div>
+                            </div>
+                        ) }
+
+                        {urlimagen && (
+                            <p className="bg-green-500 text-white p-3 text-center my-5">
+                                La imagen se subió correctamente
+                            </p>
+                        ) }
+            
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"

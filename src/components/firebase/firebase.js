@@ -18,6 +18,10 @@ class Firebase {
     }
 }
 
-const firebase = new Firebase();
+ const firebase = new Firebase(); 
 
-export default firebase;
+/* const FirebaseContext = React.createContext(firebase);
+
+export { FirebaseContext, firebase }; */
+export default firebase
+export const storage = firebase.storage 
