@@ -48,7 +48,7 @@ const NuevoPlatillo = () => {
       try {
         platillos.existencia = true;
         platillos.imagen = urlimagen
-        console.log(platillos.imagen);
+        console.log(platillos);
         const docRef = addDoc(collection(firebase.db, "productos"), platillos);
         //Redireccionar
         navigate("/menu");
