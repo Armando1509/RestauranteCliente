@@ -8,14 +8,13 @@ const Menu = () => {
   // Definir el state para guardar los platillos
   const [platillos, guardarPlatillos] = useState([]);
   const { firebase } = useContext(FirebaseContext);
-/*   console.log('desde firabase', firebase.db); */
+  
   
 
   // Consultar BD
    useEffect(() => {
     const obternerPlatillos = () => {
       const productosCollection = collection(firebase.db, 'productos');
-      console.log(productosCollection);
       onSnapshot(productosCollection, manejarSnapshot);
     }
     obternerPlatillos();
@@ -41,6 +40,12 @@ const Menu = () => {
         Agregar platillo
       </Link>
       
+      {platillos.map( platillo => (
+                <Platillo
+                    key={platillo.id}
+                    platillo={platillo}
+                />
+            ))}
     </div>
   );
 };
